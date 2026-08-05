@@ -109,7 +109,7 @@ namespace Reflux
         public static IntPtr handle;
         public static long playMarkerAddress = 0;
         public static bool playMarkerAvailable = false;
-        readonly static int songBufferSize = 0x630;
+        readonly static int songBufferSize = 0x730;
         /// <summary>
         /// DB for keeping track of unlocks and potential changes
         /// </summary>
@@ -450,16 +450,22 @@ namespace Reflux
             int bytesRead = 0;
             short slab = 64;
             short string_slab = 128; // Strings takes double the space now, except for the LED ticker text
+            /* 2026-08-05 patch (P2D:J:B:A:2026080500): the song entry grew from 0x630 to 0x730.
+             * title/genre/artist switched from Shift-JIS to UTF-16LE; title1 and artist buffers
+             * doubled to fit it, genre stayed at 128 bytes. The LED ticker text (title2) is
+             * unchanged - still 64 bytes of Shift-JIS. */
+            short title_slab = 256;
+            short artist_slab = 256;
             short word = 4; /* Int32 */
             int offset = 0;
-            int idPosition = 1200;
+            int idPosition = 1456; /* 1200 + 256 */
 
             byte[] buffer = new byte[songBufferSize];
 
             ReadProcessMemory((int)handle, position, buffer, buffer.Length, ref bytesRead);
 
-            var title1 = Encoding.GetEncoding("Shift-JIS").GetString(buffer.Take(string_slab).Where(x => x != 0).ToArray()).TrimEnd();
-            offset += string_slab;
+            var title1 = Encoding.Unicode.GetString(buffer.Take(title_slab).ToArray()).TrimEnd('\0').TrimEnd();
+            offset += title_slab;
 
             if (Utils.BytesToInt32(buffer.Take(slab).ToArray(), 0) == 0)
             {
@@ -468,10 +474,10 @@ namespace Reflux
 
             var title2 = Encoding.GetEncoding("Shift-JIS").GetString(buffer.Skip(offset).Take(slab).Where(x => x != 0).ToArray()).TrimEnd();
             offset += slab;
-            var genre = Encoding.GetEncoding("Shift-JIS").GetString(buffer.Skip(offset).Take(string_slab).Where(x => x != 0).ToArray()).TrimEnd();
+            var genre = Encoding.Unicode.GetString(buffer.Skip(offset).Take(string_slab).ToArray()).TrimEnd('\0').TrimEnd();
             offset += string_slab;
-            var artist = Encoding.GetEncoding("Shift-JIS").GetString(buffer.Skip(offset).Take(string_slab).Where(x => x != 0).ToArray()).TrimEnd();
-            offset += string_slab;
+            var artist = Encoding.Unicode.GetString(buffer.Skip(offset).Take(artist_slab).ToArray()).TrimEnd('\0').TrimEnd();
+            offset += artist_slab;
 
             var folderBytes = buffer.Skip(offset).Skip(24).Take(1).ToList();
             var folder = BitConverter.ToInt32(new byte[] { folderBytes[0], 0, 0, 0 });
