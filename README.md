@@ -1,5 +1,10 @@
 # Reflux
 
+> **Unofficial fork, forked and modified for INFOhSorry (INF오소리).** Use [OhSorryWeb](https://iidx.in) to view and analyze the scores this fork outputs.
+> Upstream: https://github.com/olji/Reflux
+>
+> **INF오소리(INFOhSorry)를 위해 포크해서 수정한 비공식 포크입니다.** 이 포크가 출력한 성적은 [오소리웹](https://iidx.in)에서 보세요.
+
 Probes INFINITAS memory and outputs all top scores into a tsv file.
 
 It also saves plays in sessions files with the following data:
